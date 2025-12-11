@@ -1,6 +1,7 @@
 package org.example.ui.impl;
 
 
+import org.example.exception.NotFoundException;
 import org.example.ui.HandlerInput;
 import org.example.ui.Menu;
 
@@ -9,14 +10,14 @@ import java.util.List;
 
 public class NavigationMenu extends Menu {
 
-    private final HandlerInput handler;
-
-
-    private static final String TEXT_ENTER_COMMAND = "Введите команду";
+    private static final String TEXT_ENTER_COMMAND = "ВВЕДИТЕ КОМАНДУ ->";
     private static final String TEXT_ENTER_0_TO_BACK = "Введите 0 чтоб вернуться назад";
     private static final String TEXT_ENTER_0_TO_EXIT = "Введите 0 чтоб выйти из приложения";
-
+    private static boolean isContinue = true;
+    private final HandlerInput handler;
     private List<Menu> subMenu;
+    private int permissibleQuantity = 3;
+    private int countErrors = 0;
 
     public NavigationMenu(String title, HandlerInput handler) {
         super(title);
@@ -26,12 +27,19 @@ public class NavigationMenu extends Menu {
 
     @Override
     public void execute() {
-        while (true) {
+        while (isContinue) {
+            if (countErrors >= permissibleQuantity) {
+                System.out.println("\nКОЛИЧЕСТВО НЕ КОРРЕКТНОГО ВВОДА ПРЕВЫСИЛО ДОПУСТИМОЕ КОЛИЧЕСТВО," +
+                                   " ВЫ ЗАБЛОКИРОВАНЫ! ОБРАТИТЕСЬ К АДМИНИСТРАТОРУ!");
+                isContinue = false;
+                return;
+            }
             System.out.println("==== " + title + "  ====");
             int i = 1;
             for (Menu menu : subMenu) {
                 System.out.println("\t" + i++ + ". " + menu.getTitle());
             }
+            System.out.println();
             System.out.println(parent == null ? TEXT_ENTER_0_TO_EXIT : TEXT_ENTER_0_TO_BACK);
 
             System.out.println("\n" + TEXT_ENTER_COMMAND);
@@ -54,7 +62,13 @@ public class NavigationMenu extends Menu {
             }
 
             Menu selectMenu = subMenu.get(inputCommand - 1);
-            selectMenu.execute();
+
+            try {
+                selectMenu.execute();
+            } catch (NotFoundException e) {
+                System.out.println(e.getBody().getMessage());
+                countErrors++;
+            }
         }
     }
 

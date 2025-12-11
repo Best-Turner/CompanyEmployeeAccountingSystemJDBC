@@ -49,7 +49,7 @@ public class HelperBuildDepartmentMenu implements HelperBuildMenu {
         manageDepartmentMenu.setParent(navigationDepartmentMenu);
         manageDepartmentMenu.addSubMenu(new ActionMenu(GET_INFO_ABOUT_DEPARTMENT, departmentService::departmentById));
         manageDepartmentMenu.addSubMenu(new ActionMenu(GET_COUNT_EMPLOYEES, departmentService::showCountEmployees));
-        manageDepartmentMenu.addSubMenu(new ActionMenu(GET_EMPLOYEES_IN_DEPARTMENT, departmentService::showDataEmployees));
+        manageDepartmentMenu.addSubMenu(new ActionMenu(GET_EMPLOYEES_IN_DEPARTMENT, departmentService::getEmployeesFromDepartment));
         return manageDepartmentMenu;
     }
 }
