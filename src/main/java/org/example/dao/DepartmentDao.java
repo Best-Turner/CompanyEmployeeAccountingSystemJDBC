@@ -1,6 +1,7 @@
 package org.example.dao;
 
 import org.example.model.Department;
+import org.example.model.Employee;
 import org.example.util.DatabaseConnection;
 
 import java.sql.*;
@@ -139,5 +140,52 @@ public class DepartmentDao {
                 .name(name)
                 .budget(budget)
                 .build();
+    }
+
+    public int getCountEmployeesFromDepartment(int id) {
+        int countEmployees = 0;
+        final String sql = "SELECT count(e.id) as count_employees " +
+                           "FROM department d " +
+                           "JOIN employee e on d.id=e.department_id " +
+                           "WHERE d.id = ?";
+        try (Connection connection = databaseConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatement.setInt(1, id);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    countEmployees = resultSet.getInt("count_employees");
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return countEmployees;
+    }
+
+    public List<Employee> getEmployees(int id) {
+        List<Employee> employees = new ArrayList<>();
+        final String sql = "SELECT e.id, e.first_name, e.last_name, e.email " +
+                           "FROM department d " +
+                           "JOIN employee e ON d.id=e.department_id" +
+                           " WHERE d.id = ? " +
+                           "ORDER BY e.id";
+        try (Connection connection = databaseConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatement.setInt(1, id);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                while (resultSet.next()) {
+                    Employee employee = new Employee();
+                    employee.setId(resultSet.getInt("id"));
+                    employee.setFirstName(resultSet.getString("first_name"));
+                    employee.setLastName(resultSet.getString("last_name"));
+                    employee.setEmail(resultSet.getString("email"));
+                    employees.add(employee);
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return employees;
     }
 }
