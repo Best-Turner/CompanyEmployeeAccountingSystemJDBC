@@ -1,14 +1,23 @@
 package org.example.model;
 
-import java.time.LocalDate;
+import jakarta.persistence.*;
 
+import java.time.LocalDate;
+@Entity
 public class Employee {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+    @Column(name = "first_name")
     private String firstName;
+    @Column(name = "last_name")
     private String lastName;
     private String email;
+    @ManyToOne
+    @JoinColumn(name = "department_id")
     private Department department;
     private Double salary;
+    @Column(name = "hire_date")
     private LocalDate hireDate;
 
     public Employee() {

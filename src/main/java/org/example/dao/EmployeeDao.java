@@ -3,6 +3,9 @@ package org.example.dao;
 import org.example.model.Department;
 import org.example.model.Employee;
 import org.example.util.DatabaseConnection;
+import org.example.util.HibernateSessionFactoryUtil;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
 
 import java.sql.*;
 import java.time.LocalDate;
@@ -27,29 +30,41 @@ public class EmployeeDao {
 
     public boolean save(Employee employee) {
         boolean result = false;
-        final String sql = "INSERT INTO employee(first_name, last_name, email, department_id, salary, hire_date) VALUES(?,?,?,?,?,?)";
-        try (Connection connection = databaseConnection.getConnection()) {
-            try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-                connection.setAutoCommit(false);
-                preparedStatement.setString(1, employee.getFirstName());
-                preparedStatement.setString(2, employee.getLastName());
-                preparedStatement.setString(3, employee.getEmail());
-                preparedStatement.setInt(4, employee.getDepartment().getId());
-                preparedStatement.setDouble(5, employee.getSalary());
-                preparedStatement.setDate(6, Date.valueOf(employee.getHireDate()));
-                int affectedRows = preparedStatement.executeUpdate();
-                if (affectedRows > 0) {
-                    connection.commit();
-                    result = true;
-                } else {
-                    connection.rollback();
-                    return result;
-                }
+//        final String sql = "INSERT INTO employee(first_name, last_name, email, department_id, salary, hire_date) VALUES(?,?,?,?,?,?)";
+//        try (Connection connection = databaseConnection.getConnection()) {
+//            try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+//                connection.setAutoCommit(false);
+//                preparedStatement.setString(1, employee.getFirstName());
+//                preparedStatement.setString(2, employee.getLastName());
+//                preparedStatement.setString(3, employee.getEmail());
+//                preparedStatement.setInt(4, employee.getDepartment().getId());
+//                preparedStatement.setDouble(5, employee.getSalary());
+//                preparedStatement.setDate(6, Date.valueOf(employee.getHireDate()));
+//                int affectedRows = preparedStatement.executeUpdate();
+//                if (affectedRows > 0) {
+//                    connection.commit();
+//                    result = true;
+//                } else {
+//                    connection.rollback();
+//                    return result;
+//                }
+//            }
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        }
+        Transaction transaction = null;
+        try (Session session = HibernateSessionFactoryUtil.getSession()) {
+            transaction = session.getTransaction();
+            transaction.begin();
+            session.persist(employee);
+            transaction.commit();
+        } catch (Exception e) {
+            System.out.println("Не сохранил");
+            if (transaction != null) {
+                transaction.rollback();
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
-        return result;
+        return false;
     }
 
     public Optional<Employee> getById(int id) {
@@ -138,19 +153,19 @@ public class EmployeeDao {
     private Employee extractEmployee(ResultSet resultSet) throws SQLException {
 
         Employee employee;
-            int id = resultSet.getInt("id");
-            String firstName = resultSet.getString("first_name");
-            String lastName = resultSet.getString("last_name");
-            String email = resultSet.getString("email");
-            double salary = resultSet.getDouble("salary");
-            LocalDate hireDate = resultSet.getDate("hire_date").toLocalDate();
-            int departmentId = resultSet.getInt("department_id");
-            String departmentName = resultSet.getString("department_name");
-            Department department = Department.builder()
-                    .id(departmentId)
-                    .name(departmentName)
-                    .build();
-            employee = new Employee(id, firstName, lastName, email, department, salary, hireDate);
+        int id = resultSet.getInt("id");
+        String firstName = resultSet.getString("first_name");
+        String lastName = resultSet.getString("last_name");
+        String email = resultSet.getString("email");
+        double salary = resultSet.getDouble("salary");
+        LocalDate hireDate = resultSet.getDate("hire_date").toLocalDate();
+        int departmentId = resultSet.getInt("department_id");
+        String departmentName = resultSet.getString("department_name");
+        Department department = Department.builder()
+                .id(departmentId)
+                .name(departmentName)
+                .build();
+        employee = new Employee(id, firstName, lastName, email, department, salary, hireDate);
 
         return employee;
     }
