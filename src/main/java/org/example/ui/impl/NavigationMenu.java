@@ -10,14 +10,14 @@ import java.util.List;
 
 public class NavigationMenu extends Menu {
 
-    private static final String TEXT_ENTER_COMMAND = "ВВЕДИТЕ КОМАНДУ ->";
-    private static final String TEXT_ENTER_0_TO_BACK = "Введите 0 чтоб вернуться назад";
     private static final String TEXT_ENTER_0_TO_EXIT = "Введите 0 чтоб выйти из приложения";
+    private static final String TEXT_ENTER_0_TO_BACK = "Введите 0 чтоб вернуться назад";
+    private static final String TEXT_ENTER_COMMAND = "ВВЕДИТЕ КОМАНДУ ->";
+    private static final int PERMISSIBLE_QUANTITY = 3;
     private static boolean isContinue = true;
     private final HandlerInput handler;
-    private List<Menu> subMenu;
-    private int permissibleQuantity = 3;
     private int countErrors = 0;
+    private List<Menu> subMenu;
 
     public NavigationMenu(String title, HandlerInput handler) {
         super(title);
@@ -28,7 +28,7 @@ public class NavigationMenu extends Menu {
     @Override
     public void execute() {
         while (isContinue) {
-            if (countErrors >= permissibleQuantity) {
+            if (countErrors >= PERMISSIBLE_QUANTITY) {
                 System.out.println("\nКОЛИЧЕСТВО НЕ КОРРЕКТНОГО ВВОДА ПРЕВЫСИЛО ДОПУСТИМОЕ КОЛИЧЕСТВО," +
                                    " ВЫ ЗАБЛОКИРОВАНЫ! ОБРАТИТЕСЬ К АДМИНИСТРАТОРУ!");
                 isContinue = false;

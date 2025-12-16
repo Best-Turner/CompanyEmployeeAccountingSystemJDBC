@@ -12,11 +12,13 @@ import java.util.Optional;
 
 public class EmployeeDao {
 
-    private static final String GET_EMPLOYEE_WITH_DEPARTMENT_NAME_SQL = """
+    private static final String GET_EMPLOYEES = """
                 SELECT e.*, d.name as department_name
                 FROM employee e 
                 JOIN department d on e.department_id = d.id ORDER BY e.id
             """;
+    private static final String GET_EMPLOYEE_BY_ID_WITH_DEPARTMENT_NAME_SQL =
+            GET_EMPLOYEES.replace("ORDER BY e.id", " WHERE e.id = ?");
     private final DatabaseConnection databaseConnection;
 
     public EmployeeDao(DatabaseConnection databaseConnection) {
@@ -53,7 +55,7 @@ public class EmployeeDao {
     public Optional<Employee> getById(int id) {
         Employee employee = null;
         try (Connection connection = databaseConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(GET_EMPLOYEE_WITH_DEPARTMENT_NAME_SQL)) {
+             PreparedStatement preparedStatement = connection.prepareStatement(GET_EMPLOYEE_BY_ID_WITH_DEPARTMENT_NAME_SQL)) {
             preparedStatement.setInt(1, id);
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {
@@ -80,7 +82,7 @@ public class EmployeeDao {
     public List<Employee> getEmployees() {
         List<Employee> result = new ArrayList<>();
         try (Connection connection = databaseConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(GET_EMPLOYEE_WITH_DEPARTMENT_NAME_SQL)) {
+             PreparedStatement preparedStatement = connection.prepareStatement(GET_EMPLOYEES)) {
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 while (resultSet.next()) {
                     result.add(extractEmployee(resultSet));

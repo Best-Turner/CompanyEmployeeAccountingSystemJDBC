@@ -28,7 +28,7 @@ public class Main {
 
         NavigationMenu mainMenu = new NavigationMenu("Главное меню", handler);
 
-        HelperBuildMenu helperEmployeeMenu = new HelperBuildEmployeeMenu(employeeService, employeeDao, handler);
+        HelperBuildMenu helperEmployeeMenu = new HelperBuildEmployeeMenu(employeeService, handler);
         HelperBuildMenu helperDepartmentMenuMenu = new HelperBuildDepartmentMenu(departmentService, handler);
 
         mainMenu.addSubMenu(helperDepartmentMenuMenu.build());
