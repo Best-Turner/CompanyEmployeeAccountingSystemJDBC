@@ -1,5 +1,7 @@
 package org.example.dao;
 
+import org.example.exception.EmployeeNotFoundException;
+import org.example.exception.NotFoundException;
 import org.example.model.Department;
 import org.example.model.Employee;
 import org.example.util.DatabaseConnection;
@@ -7,9 +9,9 @@ import org.example.util.HibernateSessionFactoryUtil;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 
-import java.sql.*;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -52,101 +54,149 @@ public class EmployeeDao {
 //        } catch (SQLException e) {
 //            e.printStackTrace();
 //        }
-        Transaction transaction = null;
         try (Session session = HibernateSessionFactoryUtil.getSession()) {
-            transaction = session.getTransaction();
-            transaction.begin();
+            session.beginTransaction();
             session.persist(employee);
-            transaction.commit();
         } catch (Exception e) {
-            System.out.println("Не сохранил");
-            if (transaction != null) {
-                transaction.rollback();
-            }
+            System.out.println("Ошибка сохранения работника");
+            throw new RuntimeException(e.getMessage());
         }
-        return false;
+        return true;
     }
 
+
     public Optional<Employee> getById(int id) {
-        Employee employee = null;
-        try (Connection connection = databaseConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(GET_EMPLOYEE_BY_ID_WITH_DEPARTMENT_NAME_SQL)) {
-            preparedStatement.setInt(1, id);
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    employee = extractEmployee(resultSet);
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+//        Employee employee = null;
+//        try (Connection connection = databaseConnection.getConnection();
+//             PreparedStatement preparedStatement = connection.prepareStatement(GET_EMPLOYEE_BY_ID_WITH_DEPARTMENT_NAME_SQL)) {
+//            preparedStatement.setInt(1, id);
+//            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+//                if (resultSet.next()) {
+//                    employee = extractEmployee(resultSet);
+//                }
+//            }
+//        } catch (SQLException e) {
+//            throw new RuntimeException(e);
+//        }
+//        return Optional.ofNullable(employee);
+
+        try (Session session = HibernateSessionFactoryUtil.getSession()) {
+            session.beginTransaction();
+            Employee employee = session.find(Employee.class, id);
+            return Optional.ofNullable(employee);
         }
-        return Optional.ofNullable(employee);
     }
 
     public boolean deleteById(int id) {
-        final String sql = "DELETE FROM employee WHERE id = ?";
-        try (Connection connection = databaseConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setInt(1, id);
-            return preparedStatement.executeUpdate() == 1;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+//        final String sql = "DELETE FROM employee WHERE id = ?";
+//        try (Connection connection = databaseConnection.getConnection();
+//             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+//            preparedStatement.setInt(1, id);
+//            return preparedStatement.executeUpdate() == 1;
+//        } catch (SQLException e) {
+//            throw new RuntimeException(e);
+//        }
+
+        try (Session session = HibernateSessionFactoryUtil.getSession()) {
+            Transaction transaction = session.beginTransaction();
+            Employee employee = session.find(Employee.class, id);
+            if (employee == null) {
+                throw new EmployeeNotFoundException("Сотрудник с ID = " + id + " не найден");
+            }
+            session.remove(employee);
+            transaction.commit();
+            return true;
+        } catch (NotFoundException e) {
+            throw e;
         }
     }
 
     public List<Employee> getEmployees() {
-        List<Employee> result = new ArrayList<>();
-        try (Connection connection = databaseConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(GET_EMPLOYEES)) {
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                while (resultSet.next()) {
-                    result.add(extractEmployee(resultSet));
-                }
-            }
-            return result;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+//        List<Employee> result = new ArrayList<>();
+//        try (Connection connection = databaseConnection.getConnection();
+//             PreparedStatement preparedStatement = connection.prepareStatement(GET_EMPLOYEES)) {
+//            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+//                while (resultSet.next()) {
+//                    result.add(extractEmployee(resultSet));
+//                }
+//            }
+//            return result;
+//        } catch (SQLException e) {
+//            throw new RuntimeException(e);
+//        }
+        try (Session session = HibernateSessionFactoryUtil.getSession()) {
+            session.beginTransaction();
+            return session.createQuery("FROM Employee e ORDER BY e.id", Employee.class).list();
         }
     }
 
     public boolean updateEmployee(int id, Employee updatedEmp) {
-        final String sql = """
-                UPDATE employee SET 
-                first_name = ?, 
-                last_name = ?,
-                email = ?,
-                department_id = ?,
-                salary = ?,
-                hire_date = ?
-                WHERE id = ?               
-                """;
-        boolean resultUpdate = false;
-        try (Connection connection = databaseConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            int tempTransactionIsolation = connection.getTransactionIsolation();
-            connection.setAutoCommit(false);
-            connection.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
-            preparedStatement.setString(1, updatedEmp.getFirstName());
-            preparedStatement.setString(2, updatedEmp.getLastName());
-            preparedStatement.setString(3, updatedEmp.getEmail());
-            preparedStatement.setInt(4, updatedEmp.getDepartment().getId());
-            preparedStatement.setDouble(5, updatedEmp.getSalary());
-            preparedStatement.setDate(6, Date.valueOf(updatedEmp.getHireDate()));
-            preparedStatement.setInt(7, id);
+//        final String sql = """
+//                UPDATE employee SET
+//                first_name = ?,
+//                last_name = ?,
+//                email = ?,
+//                department_id = ?,
+//                salary = ?,
+//                hire_date = ?
+//                WHERE id = ?
+//                """;
+//        boolean resultUpdate = false;
+//        try (Connection connection = databaseConnection.getConnection();
+//             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+//            int tempTransactionIsolation = connection.getTransactionIsolation();
+//            connection.setAutoCommit(false);
+//            connection.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
+//            preparedStatement.setString(1, updatedEmp.getFirstName());
+//            preparedStatement.setString(2, updatedEmp.getLastName());
+//            preparedStatement.setString(3, updatedEmp.getEmail());
+//            preparedStatement.setInt(4, updatedEmp.getDepartment().getId());
+//            preparedStatement.setDouble(5, updatedEmp.getSalary());
+//            preparedStatement.setDate(6, Date.valueOf(updatedEmp.getHireDate()));
+//            preparedStatement.setInt(7, id);
+//
+//            int resultUpdatedRow = preparedStatement.executeUpdate();
+//            if (resultUpdatedRow == 1) {
+//                connection.commit();
+//                connection.setTransactionIsolation(tempTransactionIsolation);
+//                resultUpdate = true;
+//            } else {
+//                connection.rollback();
+//                connection.setTransactionIsolation(tempTransactionIsolation);
+//            }
+//        } catch (SQLException e) {
+//            throw new RuntimeException(e);
+//        }
+//        return resultUpdate;
 
-            int resultUpdatedRow = preparedStatement.executeUpdate();
-            if (resultUpdatedRow == 1) {
-                connection.commit();
-                connection.setTransactionIsolation(tempTransactionIsolation);
-                resultUpdate = true;
-            } else {
-                connection.rollback();
-                connection.setTransactionIsolation(tempTransactionIsolation);
+        try (Session session = HibernateSessionFactoryUtil.getSession()) {
+            Transaction transaction = session.beginTransaction();
+            try {
+                Employee employee = session.find(Employee.class, id);
+                if (employee == null) {
+                    throw new EmployeeNotFoundException("Работник с ID = " + id + " не найден");
+                }
+                employee.setFirstName(updatedEmp.getFirstName());
+                employee.setLastName(updatedEmp.getLastName());
+                employee.setEmail(updatedEmp.getEmail());
+                employee.setDepartment(updatedEmp.getDepartment());
+                employee.setHireDate(updatedEmp.getHireDate());
+                employee.setSalary(updatedEmp.getSalary());
+                transaction.commit();
+            } catch (EmployeeNotFoundException e) {
+                if (transaction != null && transaction.isActive()) {
+                    transaction.rollback();
+                }
+                throw e;
+            } catch (Exception e) {
+                if (transaction != null && transaction.isActive()) {
+                    transaction.rollback();
+                }
+                System.out.println("Ошибка при обновлении сотрудника " + e.getMessage());
+                throw e;
             }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
         }
-        return resultUpdate;
+        return true;
     }
 
 
@@ -170,24 +220,42 @@ public class EmployeeDao {
         return employee;
     }
 
-    public boolean deleteByEmail(String input) {
-        return false;
-    }
+    public boolean deleteByEmail(String email) {
+        try (Session session = HibernateSessionFactoryUtil.getSession()) {
+            Transaction transaction = session.beginTransaction();
 
-
-    private boolean existsByEmail(String email) {
-        final String sql = "SELECT EXISTS(SELECT 1 FROM employee WHERE email = ?)";
-        try (Connection connection = databaseConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            preparedStatement.setString(1, email);
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return resultSet.getBoolean(1);
+            try {
+                int affectedRow = session.createQuery("DELETE FROM Employee e WHERE e.email = :email")
+                        .setParameter("email", email)
+                        .executeUpdate();
+                transaction.commit();
+                if (affectedRow == 0) {
+                    throw new EmployeeNotFoundException("Сотрудника с email = " + email + " не найден");
                 }
+                return true;
+            } catch (Exception e) {
+                if (transaction != null & transaction.isActive()) {
+                    transaction.rollback();
+                }
+                throw e;
             }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
         }
-        return false;
     }
+
+
+    //private Optional<Employee> employeeByEmail(String email) {
+//        final String sql = "SELECT EXISTS(SELECT 1 FROM employee WHERE email = ?)";
+//        try (Connection connection = databaseConnection.getConnection();
+//             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+//            preparedStatement.setString(1, email);
+//            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+//                if (resultSet.next()) {
+//                    return resultSet.getBoolean(1);
+//                }
+//            }
+//        } catch (SQLException e) {
+//            throw new RuntimeException(e);
+//        }
+//        return false;
+
 }

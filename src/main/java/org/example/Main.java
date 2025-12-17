@@ -11,6 +11,7 @@ import org.example.ui.impl.HelperBuildDepartmentMenu;
 import org.example.ui.impl.HelperBuildEmployeeMenu;
 import org.example.ui.impl.NavigationMenu;
 import org.example.util.DatabaseConnection;
+import org.example.util.HibernateSessionFactoryUtil;
 
 import java.util.Scanner;
 
@@ -37,5 +38,6 @@ public class Main {
         mainMenu.execute();
 
         scanner.close();
+        HibernateSessionFactoryUtil.shutDown();
     }
 }
