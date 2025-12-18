@@ -17,18 +17,18 @@ import java.util.Optional;
 
 public class EmployeeDao {
 
-    private static final String GET_EMPLOYEES = """
-                SELECT e.*, d.name as department_name
-                FROM employee e 
-                JOIN department d on e.department_id = d.id ORDER BY e.id
-            """;
-    private static final String GET_EMPLOYEE_BY_ID_WITH_DEPARTMENT_NAME_SQL =
-            GET_EMPLOYEES.replace("ORDER BY e.id", " WHERE e.id = ?");
-    private final DatabaseConnection databaseConnection;
-
-    public EmployeeDao(DatabaseConnection databaseConnection) {
-        this.databaseConnection = databaseConnection;
-    }
+//    private static final String GET_EMPLOYEES = """
+//                SELECT e.*, d.name as department_name
+//                FROM employee e
+//                JOIN department d on e.department_id = d.id ORDER BY e.id
+//            """;
+//    private static final String GET_EMPLOYEE_BY_ID_WITH_DEPARTMENT_NAME_SQL =
+//            GET_EMPLOYEES.replace("ORDER BY e.id", " WHERE e.id = ?");
+//    private final DatabaseConnection databaseConnection;
+//
+//    public EmployeeDao(DatabaseConnection databaseConnection) {
+//        this.databaseConnection = databaseConnection;
+//    }
 
     public boolean save(Employee employee) {
         boolean result = false;
@@ -200,25 +200,25 @@ public class EmployeeDao {
     }
 
 
-    private Employee extractEmployee(ResultSet resultSet) throws SQLException {
-
-        Employee employee;
-        int id = resultSet.getInt("id");
-        String firstName = resultSet.getString("first_name");
-        String lastName = resultSet.getString("last_name");
-        String email = resultSet.getString("email");
-        double salary = resultSet.getDouble("salary");
-        LocalDate hireDate = resultSet.getDate("hire_date").toLocalDate();
-        int departmentId = resultSet.getInt("department_id");
-        String departmentName = resultSet.getString("department_name");
-        Department department = Department.builder()
-                .id(departmentId)
-                .name(departmentName)
-                .build();
-        employee = new Employee(id, firstName, lastName, email, department, salary, hireDate);
-
-        return employee;
-    }
+//    private Employee extractEmployee(ResultSet resultSet) throws SQLException {
+//
+//        Employee employee;
+//        int id = resultSet.getInt("id");
+//        String firstName = resultSet.getString("first_name");
+//        String lastName = resultSet.getString("last_name");
+//        String email = resultSet.getString("email");
+//        double salary = resultSet.getDouble("salary");
+//        LocalDate hireDate = resultSet.getDate("hire_date").toLocalDate();
+//        int departmentId = resultSet.getInt("department_id");
+//        String departmentName = resultSet.getString("department_name");
+//        Department department = Department.builder()
+//                .id(departmentId)
+//                .name(departmentName)
+//                .build();
+//        employee = new Employee(id, firstName, lastName, email, department, salary, hireDate);
+//
+//        return employee;
+//    }
 
     public boolean deleteByEmail(String email) {
         try (Session session = HibernateSessionFactoryUtil.getSession()) {

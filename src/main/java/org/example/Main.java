@@ -20,8 +20,8 @@ public class Main {
         DatabaseConnection connection = new DatabaseConnection();
         Scanner scanner = new Scanner(System.in);
 
-        DepartmentDao departmentDao = new DepartmentDao(connection);
-        EmployeeDao employeeDao = new EmployeeDao(connection);
+        DepartmentDao departmentDao = new DepartmentDao();
+        EmployeeDao employeeDao = new EmployeeDao();
 
         EmployeeService employeeService = new EmployeeService(scanner, employeeDao);
         DepartmentService departmentService = new DepartmentService(scanner, departmentDao);

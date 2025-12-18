@@ -111,7 +111,7 @@ public class DepartmentService {
 
     public void showCountEmployees() {
         Department departmentById = getDepartmentById();
-        int countEmployees = departmentDao.getCountEmployeesFromDepartment(departmentById.getId());
+        long countEmployees = departmentDao.getCountEmployeesFromDepartment(departmentById.getId());
         System.out.printf("%-3s | %-13s | %10s%n", "ID", "Название", "Количество сотрудников");
         System.out.println("-------------------------------------");
         System.out.printf("%-3d | %-13s | %10d%n", departmentById.getId(), departmentById.getName(), countEmployees);
