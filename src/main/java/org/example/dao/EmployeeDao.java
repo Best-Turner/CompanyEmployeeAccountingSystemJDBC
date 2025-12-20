@@ -57,6 +57,7 @@ public class EmployeeDao {
         try (Session session = HibernateSessionFactoryUtil.getSession()) {
             session.beginTransaction();
             session.persist(employee);
+            session.getTransaction().commit();
         } catch (Exception e) {
             System.out.println("Ошибка сохранения работника");
             throw new RuntimeException(e.getMessage());
@@ -83,6 +84,7 @@ public class EmployeeDao {
         try (Session session = HibernateSessionFactoryUtil.getSession()) {
             session.beginTransaction();
             Employee employee = session.find(Employee.class, id);
+            session.getTransaction().commit();
             return Optional.ofNullable(employee);
         }
     }
