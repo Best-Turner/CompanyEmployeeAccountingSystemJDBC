@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Appenders>
+        <Console name="CONSOLE" target="SYSTEM_OUT">
+            <PatternLayout pattern="%p - %m%n"/>
+        </Console>
+        <File name="MAIN" fileName="logs/main.log">
+            <PatternLayout pattern="%d{DATE} [%p] [%t] - %c{1} %m%n"/>
+        </File>
+        <File name="DEBUG_LOG" fileName="logs/debug.log" append="false">
+            <PatternLayout pattern="%d{DATE} [%t] %p %c{1} - %m%n"/>
+        </File>
+    </Appenders>
+    <Loggers>
+        <Root level="INFO">
+            <AppenderRef ref="CONSOLE" level="WARN"/>
+            <AppenderRef ref="MAIN"/>
+        </Root>
+        <Logger name="org.example" level="DEBUG" additivity="false">
+            <AppenderRef ref="DEBUG_LOG"/>
+        </Logger>
+    </Loggers>
+</Configuration>
