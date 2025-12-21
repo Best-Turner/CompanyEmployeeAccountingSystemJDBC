@@ -1,263 +1,201 @@
 package org.example.dao;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.example.exception.EmployeeNotFoundException;
 import org.example.exception.NotFoundException;
-import org.example.model.Department;
 import org.example.model.Employee;
-import org.example.util.DatabaseConnection;
 import org.example.util.HibernateSessionFactoryUtil;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 public class EmployeeDao {
-
-//    private static final String GET_EMPLOYEES = """
-//                SELECT e.*, d.name as department_name
-//                FROM employee e
-//                JOIN department d on e.department_id = d.id ORDER BY e.id
-//            """;
-//    private static final String GET_EMPLOYEE_BY_ID_WITH_DEPARTMENT_NAME_SQL =
-//            GET_EMPLOYEES.replace("ORDER BY e.id", " WHERE e.id = ?");
-//    private final DatabaseConnection databaseConnection;
-//
-//    public EmployeeDao(DatabaseConnection databaseConnection) {
-//        this.databaseConnection = databaseConnection;
-//    }
+    public static final Logger LOGGER = LogManager.getLogger(EmployeeDao.class);
 
     public boolean save(Employee employee) {
-        boolean result = false;
-//        final String sql = "INSERT INTO employee(first_name, last_name, email, department_id, salary, hire_date) VALUES(?,?,?,?,?,?)";
-//        try (Connection connection = databaseConnection.getConnection()) {
-//            try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-//                connection.setAutoCommit(false);
-//                preparedStatement.setString(1, employee.getFirstName());
-//                preparedStatement.setString(2, employee.getLastName());
-//                preparedStatement.setString(3, employee.getEmail());
-//                preparedStatement.setInt(4, employee.getDepartment().getId());
-//                preparedStatement.setDouble(5, employee.getSalary());
-//                preparedStatement.setDate(6, Date.valueOf(employee.getHireDate()));
-//                int affectedRows = preparedStatement.executeUpdate();
-//                if (affectedRows > 0) {
-//                    connection.commit();
-//                    result = true;
-//                } else {
-//                    connection.rollback();
-//                    return result;
-//                }
-//            }
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }
+        LOGGER.debug("Попытка сохранить нового employee, {}", employee);
+
         try (Session session = HibernateSessionFactoryUtil.getSession()) {
+            LOGGER.trace("Получение Hibernate сессии");
             session.beginTransaction();
+            LOGGER.trace("Транзакция начата");
             session.persist(employee);
+            LOGGER.debug("Employee переходит в статус manage");
             session.getTransaction().commit();
+            LOGGER.trace("Транзакция успешна и commit");
         } catch (Exception e) {
-            System.out.println("Ошибка сохранения работника");
+            LOGGER.error("Ошибка сохранения работника, {}", e.getMessage(), e);
             throw new RuntimeException(e.getMessage());
         }
+        LOGGER.info("Employee сохранен с ID: {}", employee.getId());
         return true;
     }
 
 
     public Optional<Employee> getById(int id) {
-//        Employee employee = null;
-//        try (Connection connection = databaseConnection.getConnection();
-//             PreparedStatement preparedStatement = connection.prepareStatement(GET_EMPLOYEE_BY_ID_WITH_DEPARTMENT_NAME_SQL)) {
-//            preparedStatement.setInt(1, id);
-//            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-//                if (resultSet.next()) {
-//                    employee = extractEmployee(resultSet);
-//                }
-//            }
-//        } catch (SQLException e) {
-//            throw new RuntimeException(e);
-//        }
-//        return Optional.ofNullable(employee);
-
+        Employee emp = null;
+        LOGGER.debug("Попытка получить сотрудника c ID: {}", id);
         try (Session session = HibernateSessionFactoryUtil.getSession()) {
-            session.beginTransaction();
-            Employee employee = session.find(Employee.class, id);
-            session.getTransaction().commit();
-            return Optional.ofNullable(employee);
+            LOGGER.trace("Сессия Hibernate получена");
+            Transaction transaction = session.beginTransaction();
+            LOGGER.trace("Транзакция открыта");
+            try {
+                emp = session.find(Employee.class, id);
+                transaction.commit();
+                LOGGER.trace("Транзакция закрыта - commit");
+            } catch (Exception e) {
+                if (transaction != null && transaction.isActive()) {
+                    transaction.rollback();
+                    LOGGER.trace("Откат транзакции из-за ошибки {}", e.getMessage());
+                }
+                LOGGER.error("Ошибка при выполнении запроса {}", e.getMessage());
+            }
+
+        } catch (Exception e) {
+            LOGGER.error("Ошибка при получении сессии {}", e.getMessage());
+            throw new RuntimeException(e.getMessage());
         }
+        LOGGER.info("Получили сотрудка по ID:", id);
+        return Optional.ofNullable(emp);
     }
 
     public boolean deleteById(int id) {
-//        final String sql = "DELETE FROM employee WHERE id = ?";
-//        try (Connection connection = databaseConnection.getConnection();
-//             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-//            preparedStatement.setInt(1, id);
-//            return preparedStatement.executeUpdate() == 1;
-//        } catch (SQLException e) {
-//            throw new RuntimeException(e);
-//        }
 
+        LOGGER.debug("Попытка удалить сотрудника c ID: {}", id);
         try (Session session = HibernateSessionFactoryUtil.getSession()) {
+            LOGGER.trace("Сессия Hibernate получена");
             Transaction transaction = session.beginTransaction();
-            Employee employee = session.find(Employee.class, id);
-            if (employee == null) {
-                throw new EmployeeNotFoundException("Сотрудник с ID = " + id + " не найден");
-            }
-            session.remove(employee);
-            transaction.commit();
-            return true;
-        } catch (NotFoundException e) {
-            throw e;
-        }
-    }
-
-    public List<Employee> getEmployees() {
-//        List<Employee> result = new ArrayList<>();
-//        try (Connection connection = databaseConnection.getConnection();
-//             PreparedStatement preparedStatement = connection.prepareStatement(GET_EMPLOYEES)) {
-//            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-//                while (resultSet.next()) {
-//                    result.add(extractEmployee(resultSet));
-//                }
-//            }
-//            return result;
-//        } catch (SQLException e) {
-//            throw new RuntimeException(e);
-//        }
-        try (Session session = HibernateSessionFactoryUtil.getSession()) {
-            session.beginTransaction();
-            return session.createQuery("FROM Employee e ORDER BY e.id", Employee.class).list();
-        }
-    }
-
-    public boolean updateEmployee(int id, Employee updatedEmp) {
-//        final String sql = """
-//                UPDATE employee SET
-//                first_name = ?,
-//                last_name = ?,
-//                email = ?,
-//                department_id = ?,
-//                salary = ?,
-//                hire_date = ?
-//                WHERE id = ?
-//                """;
-//        boolean resultUpdate = false;
-//        try (Connection connection = databaseConnection.getConnection();
-//             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-//            int tempTransactionIsolation = connection.getTransactionIsolation();
-//            connection.setAutoCommit(false);
-//            connection.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
-//            preparedStatement.setString(1, updatedEmp.getFirstName());
-//            preparedStatement.setString(2, updatedEmp.getLastName());
-//            preparedStatement.setString(3, updatedEmp.getEmail());
-//            preparedStatement.setInt(4, updatedEmp.getDepartment().getId());
-//            preparedStatement.setDouble(5, updatedEmp.getSalary());
-//            preparedStatement.setDate(6, Date.valueOf(updatedEmp.getHireDate()));
-//            preparedStatement.setInt(7, id);
-//
-//            int resultUpdatedRow = preparedStatement.executeUpdate();
-//            if (resultUpdatedRow == 1) {
-//                connection.commit();
-//                connection.setTransactionIsolation(tempTransactionIsolation);
-//                resultUpdate = true;
-//            } else {
-//                connection.rollback();
-//                connection.setTransactionIsolation(tempTransactionIsolation);
-//            }
-//        } catch (SQLException e) {
-//            throw new RuntimeException(e);
-//        }
-//        return resultUpdate;
-
-        try (Session session = HibernateSessionFactoryUtil.getSession()) {
-            Transaction transaction = session.beginTransaction();
+            LOGGER.trace("Транзакция начата");
             try {
                 Employee employee = session.find(Employee.class, id);
                 if (employee == null) {
-                    throw new EmployeeNotFoundException("Работник с ID = " + id + " не найден");
+                    LOGGER.warn("Сотрудник с ID: {} не найден", id);
+                    throw new EmployeeNotFoundException("Сотрудник с ID = " + id + " не найден");
                 }
-                employee.setFirstName(updatedEmp.getFirstName());
-                employee.setLastName(updatedEmp.getLastName());
-                employee.setEmail(updatedEmp.getEmail());
-                employee.setDepartment(updatedEmp.getDepartment());
-                employee.setHireDate(updatedEmp.getHireDate());
-                employee.setSalary(updatedEmp.getSalary());
+                session.remove(employee);
+                LOGGER.debug("Сотрудник с ID: {} найден и удален", id);
                 transaction.commit();
-            } catch (EmployeeNotFoundException e) {
+                LOGGER.trace("Транзакция закрыта - commit");
+                LOGGER.info("Сотрудник с ID: {} удален", id);
+                return true;
+            } catch (NotFoundException ex) {
+                if (transaction != null && transaction.isActive()) {
+                    LOGGER.trace("Откат транзакции из-за ошибки {}", ex.getMessage());
+                }
+                LOGGER.warn("Ошибка удаления сотрудника с ID: {}, {}", id, ex.getMessage());
+            }
+        } catch (Exception e) {
+            LOGGER.error("Ошибка {}", e.getMessage());
+            throw new RuntimeException(e.getMessage());
+        }
+        LOGGER.info("Сотрудник с ID: {} не удален", id);
+        return false;
+    }
+
+    public List<Employee> getEmployees() {
+
+        LOGGER.debug("Попытка получить список сотрудников");
+        try (Session session = HibernateSessionFactoryUtil.getSession()) {
+            LOGGER.trace("Получение Hibernate сессии");
+            Transaction transaction = session.beginTransaction();
+            LOGGER.trace("Транзакция открыта");
+            try {
+                List<Employee> list = session.createQuery("FROM Employee e ORDER BY e.id", Employee.class).list();
+                transaction.commit();
+                LOGGER.trace("Транзакция закрыта - commit");
+                LOGGER.info("Список сотрудников получен");
+                return list;
+            } catch (Exception ex) {
                 if (transaction != null && transaction.isActive()) {
                     transaction.rollback();
+                    LOGGER.debug("Откат транзакции из-за ошибки {}", ex.getMessage());
+                }
+                throw ex;
+            }
+        } catch (Exception e) {
+            LOGGER.error("Ошибка {}", e.getMessage());
+        }
+        LOGGER.info("Возврат пустого списка сотрудников из-за ошибки");
+        return Collections.emptyList();
+    }
+
+    public boolean updateEmployee(int id, Employee updatedEmp) {
+        LOGGER.debug("Попытка обновить сотрудника с ID: {}", id);
+        try (Session session = HibernateSessionFactoryUtil.getSession()) {
+            LOGGER.trace("Получение Hibernate сессии");
+            Transaction transaction = session.beginTransaction();
+            LOGGER.trace("Транзакция открыта");
+            try {
+                LOGGER.trace("Попытка найти сотрудника с ID: {}", id);
+                Employee employee = session.find(Employee.class, id);
+                if (employee == null) {
+                    LOGGER.warn("Сотрудник с ID: {} не найден", id);
+                    throw new EmployeeNotFoundException("Работник с ID = " + id + " не найден");
+                }
+                LOGGER.debug("Сотрудник с ID: {} найден", id);
+                employee.setFirstName(updatedEmp.getFirstName());
+                LOGGER.debug("Установили новое имя - {}", updatedEmp.getFirstName());
+                employee.setLastName(updatedEmp.getLastName());
+                LOGGER.debug("Установили новую фамилию - {}", updatedEmp.getLastName());
+                employee.setEmail(updatedEmp.getEmail());
+                LOGGER.debug("Установили новый email - {}", updatedEmp.getEmail());
+                employee.setDepartment(updatedEmp.getDepartment());
+                LOGGER.debug("Установили новый департамент - {}", updatedEmp.getDepartment());
+                employee.setHireDate(updatedEmp.getHireDate());
+                LOGGER.debug("Установили новую дату устройства на работу - {}", updatedEmp.getHireDate());
+                employee.setSalary(updatedEmp.getSalary());
+                LOGGER.debug("Установили новую зарплату - {}", updatedEmp.getSalary());
+                transaction.commit();
+                LOGGER.trace("Транзакция успешна - commit");
+            } catch (NotFoundException e) {
+                LOGGER.warn("Ошибка получения сотрудника по ID: {}, {}", id, e.getMessage());
+                if (transaction != null && transaction.isActive()) {
+                    transaction.rollback();
+                    LOGGER.trace("Откат транзакции из-за ошибки {}", e.getMessage());
                 }
                 throw e;
             } catch (Exception e) {
                 if (transaction != null && transaction.isActive()) {
+                    LOGGER.trace("Откат транзакции из-за ошибки {}", e.getMessage());
                     transaction.rollback();
                 }
                 System.out.println("Ошибка при обновлении сотрудника " + e.getMessage());
-                throw e;
+                throw new RuntimeException(e.getMessage());
             }
         }
+        LOGGER.info("Сотрудник успешно обновлен");
         return true;
     }
 
-
-//    private Employee extractEmployee(ResultSet resultSet) throws SQLException {
-//
-//        Employee employee;
-//        int id = resultSet.getInt("id");
-//        String firstName = resultSet.getString("first_name");
-//        String lastName = resultSet.getString("last_name");
-//        String email = resultSet.getString("email");
-//        double salary = resultSet.getDouble("salary");
-//        LocalDate hireDate = resultSet.getDate("hire_date").toLocalDate();
-//        int departmentId = resultSet.getInt("department_id");
-//        String departmentName = resultSet.getString("department_name");
-//        Department department = Department.builder()
-//                .id(departmentId)
-//                .name(departmentName)
-//                .build();
-//        employee = new Employee(id, firstName, lastName, email, department, salary, hireDate);
-//
-//        return employee;
-//    }
-
     public boolean deleteByEmail(String email) {
+        LOGGER.debug("Попытка удалить сотрудника по email: {}", email);
         try (Session session = HibernateSessionFactoryUtil.getSession()) {
+            LOGGER.trace("Получение Hibernate сессии");
             Transaction transaction = session.beginTransaction();
-
+            LOGGER.trace("Транзакция открыта");
             try {
+                LOGGER.trace("Выполнение запроса на удаление");
                 int affectedRow = session.createQuery("DELETE FROM Employee e WHERE e.email = :email")
                         .setParameter("email", email)
                         .executeUpdate();
-                transaction.commit();
                 if (affectedRow == 0) {
-                    throw new EmployeeNotFoundException("Сотрудника с email = " + email + " не найден");
+                    LOGGER.warn("Ошибка получения сотрудника по email: {}", email);
+                    throw new EmployeeNotFoundException("Сотрудник с email = " + email + " не найден");
                 }
+                LOGGER.info("Сотрудник с email: {} удален", email);
                 return true;
             } catch (Exception e) {
-                if (transaction != null & transaction.isActive()) {
+                LOGGER.error("Ошибка при удалении сотрудника по email: {}, {}", email, e.getMessage());
+                if (transaction != null && transaction.isActive()) {
+                    LOGGER.trace("Откат транзакции из-за ошибки {}", e.getMessage());
                     transaction.rollback();
                 }
                 throw e;
             }
         }
     }
-
-
-    //private Optional<Employee> employeeByEmail(String email) {
-//        final String sql = "SELECT EXISTS(SELECT 1 FROM employee WHERE email = ?)";
-//        try (Connection connection = databaseConnection.getConnection();
-//             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-//            preparedStatement.setString(1, email);
-//            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-//                if (resultSet.next()) {
-//                    return resultSet.getBoolean(1);
-//                }
-//            }
-//        } catch (SQLException e) {
-//            throw new RuntimeException(e);
-//        }
-//        return false;
-
 }
