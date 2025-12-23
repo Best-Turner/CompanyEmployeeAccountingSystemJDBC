@@ -17,7 +17,6 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        DatabaseConnection connection = new DatabaseConnection();
         Scanner scanner = new Scanner(System.in);
 
         DepartmentDao departmentDao = new DepartmentDao();
